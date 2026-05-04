@@ -30,9 +30,9 @@ JobAggregator automates the collection of job postings from public job boards. A
 JobAggregator/
 ├── scraper/                    # Python scraping pipeline
 │   ├── scrapers/
-│   │   ├── base_scraper.py     # Abstract base class for all scrapers
+│   │   ├── kariera-mk-scarper.py     # Abstract base class for all scrapers
 │   │   ├── linkedin_scraper.py
-│   │   └── indeed_scraper.py
+│   │  
 │   ├── models/
 │   │   └── job.py              # Job data model / schema
 │   ├── db/
