@@ -1,26 +1,14 @@
-# JobAggregator
+# RabotekaMK 🔧
 
-A full-stack job listing aggregator that scrapes job postings from multiple sources, stores them in a database, and exposes them through a filterable web interface.
+A job aggregator web application that scrapes and displays job listings from three major Macedonian job portals — all in one place.
 
-Built with **Python** (scraper), **Spring Boot** (REST API), and **React** (frontend).
+## Live Sources
 
----
-
-## Overview
-
-JobAggregator automates the collection of job postings from public job boards. A Python scraper runs on a schedule and upserts normalized job data into a PostgreSQL database. A Spring Boot backend exposes a REST API that supports filtering, sorting, and pagination. Users interact with the data through a React frontend that allows real-time filtering by job title, company, location, posting date, and active status.
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Scraper | Python 3, BeautifulSoup, requests, psycopg2 |
-| Database | PostgreSQL |
-| Backend | Java 17, Spring Boot 3, Spring Data JPA, Hibernate |
-| Frontend | React, Vite, TypeScript, React Query |
-| Infrastructure | Docker, Docker Compose |
+| Site | Jobs Scraped |
+|------|-------------|
+| [kariera.mk](https://kariera.mk) | ✅ |
+| [vrabotuvanje.com.mk](https://www.vrabotuvanje.com.mk) | ✅ |
+| [najdirabota.com.mk](https://www.najdirabota.com.mk) | ✅ |
 
 ---
 
@@ -28,138 +16,167 @@ JobAggregator automates the collection of job postings from public job boards. A
 
 ```
 JobAggregator/
-├── scraper/                    # Python scraping pipeline
-│   ├── scrapers/
-│   │   ├── kariera-mk-scarper.py     # Abstract base class for all scrapers
-│   │   ├── linkedin_scraper.py
-│   │  
-│   ├── models/
-│   │   └── job.py              # Job data model / schema
-│   ├── db/
-│   │   └── repository.py       # DB connection and upsert logic
-│   ├── main.py                 # Entry point, orchestrates scraper runs
-│   └── requirements.txt
 │
-├── src/                        # Spring Boot application
-│   └── main/
-│       ├── java/com/jobaggregator/
-│       │   ├── controller/
-│       │   │   └── JobController.java      # REST endpoints
-│       │   ├── service/
-│       │   │   └── JobService.java         # Business logic, filter handling
-│       │   ├── repository/
-│       │   │   └── JobRepository.java      # Spring Data JPA repository
-│       │   ├── model/
-│       │   │   └── Job.java                # JPA entity
-│       │   ├── dto/
-│       │   │   └── JobDTO.java             # API response shape
-│       │   ├── spec/
-│       │   │   └── JobSpecification.java   # Dynamic filter queries
-│       │   └── scheduler/
-│       │       └── ScraperScheduler.java   # Triggers Python scraper on cron
-│       └── resources/
-│           └── application.yml
-│
-├── frontend/                   # React application
+├── jobaggregator-frontend/         # React + Vite frontend
+│   ├── public/
+│   │   ├── logo-dark.png           # Logo for dark mode
+│   │   └── logo-light.png          # Logo for light mode
 │   ├── src/
-│   │   ├── components/
-│   │   │   ├── FilterPanel.tsx  # Filter controls (title, date, status…)
-│   │   │   ├── JobCard.tsx      # Single job listing card
-│   │   │   └── JobList.tsx      # Paginated list of JobCards
-│   │   ├── hooks/
-│   │   │   └── useJobs.ts       # React Query hook wrapping the API
-│   │   ├── api/
-│   │   │   └── jobs.ts          # Axios/fetch wrappers
-│   │   └── App.tsx
+│   │   ├── App.jsx                 # Main app component (filters, cards, dark mode)
+│   │   ├── main.jsx                # React entry point
+│   │   └── index.css               # Global styles & CSS variables
+│   ├── index.html                  # HTML entry point
+│   ├── vite.config.js              # Vite config with API proxy
 │   └── package.json
 │
-├── docker-compose.yml           # Spins up Postgres + Spring Boot + React
-├── pom.xml
+├── scraper/                        # Python scrapers
+│   ├── kariera-mk-scraper.py       # Scraper for kariera.mk
+│   ├── najdirabota-scraper.py      # Scraper for najdirabota.com.mk
+│   └── vrabotuvanje-scraper.py     # Scraper for vrabotuvanje.com.mk
+│
+├── src/
+│   └── main/
+│       ├── java/mk/ukim/finki/nvd/jobaggregator/
+│       │   ├── config/
+│       │   │   └── DataInitializer.java
+│       │   ├── model/domain/
+│       │   │   └── Job.java                # JPA entity
+│       │   ├── repository/
+│       │   │   └── JobRepository.java      # Spring Data JPA repository
+│       │   ├── service/domain/
+│       │   │   ├── JobService.java         # Service interface
+│       │   │   └── impl/
+│       │   │       └── JobServiceImpl.java # Service implementation
+│       │   ├── web/
+│       │   │   └── JobController.java      # REST API controller
+│       │   └── JobAggregatorApplication.java
+│       └── resources/
+│           └── application.properties      # DB config, JPA settings
+│
+├── docker-compose.yaml             # PostgreSQL database container
+├── pom.xml                         # Maven dependencies (Spring Boot 4.0.0)
 └── README.md
 ```
 
 ---
 
-## Job Data Model
+## Tech Stack
 
-Each scraped job posting is stored with the following fields:
+**Backend**
+- Java 21
+- Spring Boot 4.0.0
+- Spring Data JPA
+- PostgreSQL 17
+- Springdoc OpenAPI (Swagger UI)
+- Lombok
 
-| Field | Type | Description |
-|---|---|---|
-| `id` | UUID | Primary key, auto-generated |
-| `title` | String | Job title (e.g. "Backend Developer") |
-| `company` | String | Hiring company name |
-| `location` | String | City, country, or "Remote" |
-| `description` | Text | Full job description |
-| `source_url` | String | Original posting URL |
-| `source` | String | Which board it was scraped from |
-| `date_posted` | Date | When the posting was published |
-| `date_scraped` | Timestamp | When our scraper collected it |
-| `is_active` | Boolean | Whether the posting is still live |
-| `tags` | String[] | Skills/keywords extracted from the description |
+**Frontend**
+- React 18
+- Vite
+- Plain CSS with CSS variables (light/dark theme)
 
----
+**Scrapers**
+- Python 3.12
+- BeautifulSoup4
+- Requests / Cloudscraper
 
-## API Endpoints
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/jobs` | Returns paginated, filtered job listings |
-| `GET` | `/api/jobs/{id}` | Returns a single job by ID |
-
-### Filter Parameters (`GET /api/jobs`)
-
-| Param | Type | Example |
-|---|---|---|
-| `title` | string | `?title=backend` |
-| `company` | string | `?company=google` |
-| `location` | string | `?location=remote` |
-| `active` | boolean | `?active=true` |
-| `dateFrom` | date | `?dateFrom=2025-01-01` |
-| `dateTo` | date | `?dateTo=2025-12-31` |
-| `page` | int | `?page=0` |
-| `size` | int | `?size=20` |
+**Infrastructure**
+- Docker + Docker Compose (PostgreSQL)
 
 ---
 
 ## Getting Started
 
 ### Prerequisites
-
-- Docker and Docker Compose
-- Java 17+
+- Java 21
+- Docker Desktop
 - Node.js 18+
-- Python 3.10+
+- Python 3.12+
 
-### Run with Docker Compose
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/fcvetkovski/JobAggregator.git
+git clone https://github.com/filipstankovski/JobAggregator.git
 cd JobAggregator
-docker-compose up --build
 ```
 
-This starts PostgreSQL, the Spring Boot API on `http://localhost:8080`, and the React frontend on `http://localhost:5173`.
-
-### Run the scraper manually
+### 2. Start the database
 
 ```bash
-cd scraper
-pip install -r requirements.txt
-python main.py
+docker compose up -d
 ```
 
+### 3. Run the Spring Boot backend
+
+```bash
+./mvnw spring-boot:run
+```
+
+API available at: `http://localhost:8080`  
+Swagger UI: `http://localhost:8080/swagger-ui.html`
+
+### 4. Install Python dependencies
+
+```bash
+pip3 install requests beautifulsoup4 cloudscraper --break-system-packages
+```
+
+### 5. Run the scrapers
+
+> Make sure Spring Boot is running before executing scrapers.
+
+```bash
+python3 scraper/kariera-mk-scraper.py
+python3 scraper/najdirabota-scraper.py
+python3 scraper/vrabotuvanje-scraper.py
+```
+
+### 6. Start the frontend
+
+```bash
+cd jobaggregator-frontend
+npm install
+npm run dev
+```
+
+Open: `http://localhost:5173`
+
 ---
 
-## Team
+## Features
 
-| Member | Responsibilities |
-|---|---|
-| Person A | Python scraper, database schema, JPA entities, filter query logic |
-| Person B | Spring Boot REST API, DTOs, React frontend, React Query integration |
+- 🔍 Search by job title or company name
+- 📍 Filter by location
+- 🗂️ Filter by category
+- 📅 Filter by active until date range
+- 🌐 Filter by source website
+- 🌙 Dark / Light mode toggle
+- 🔗 Direct apply links to original job postings
 
 ---
 
-## License
+## API Endpoints
 
-This project is for educational purposes.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/jobs` | Get all jobs |
+| GET | `/api/jobs/{id}` | Get job by ID |
+| POST | `/api/jobs` | Create a job |
+| PUT | `/api/jobs/{id}` | Update a job |
+| DELETE | `/api/jobs/{id}` | Delete a job |
+
+---
+
+## Database
+
+PostgreSQL runs in Docker. Data persists via a Docker volume (`pgdata`) and survives container restarts.
+
+```
+Host:     localhost
+Port:     5434
+Database: nvd
+User:     nvd
+Password: nvd123
+```
+
+> ⚠️ Never run `docker compose down -v` — the `-v` flag deletes the volume and all data.
