@@ -62,7 +62,7 @@ def is_valid_title(title):
 
 def extract_job_links(soup):
     """Extract unique job detail URLs from a page, skipping UI button links."""
-    links = {}  # url -> title
+    links = {}  
     for a in soup.find_all("a", href=re.compile(r"/vacancy/view/id=")):
         href = a.get("href", "")
         title = a.get_text(strip=True)
@@ -76,7 +76,7 @@ def extract_job_links(soup):
         if url not in links:
             links[url] = title
 
-    return links  # {url: title}
+    return links  
 
 
 
@@ -127,9 +127,9 @@ def collect_all_links():
     1. Homepage (featured jobs)
     2. /vacancy/search?page=N (paginated full listing)
     """
-    all_links = {}  # url -> title
+    all_links = {}  
 
-    # Homepage
+    
     print("  Scanning homepage…")
     soup = fetch(HOME_URL)
     if soup:
@@ -137,7 +137,7 @@ def collect_all_links():
         print(f"    Found {len(found)} links on homepage")
         all_links.update(found)
 
-    # Paginated search listing
+   
     page = 1
     while True:
         url = f"{SEARCH_URL}?page={page}"
