@@ -16,7 +16,7 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
-# ── CONFIG ──────────────────────────────────────────────────────────────────
+
 
 BASE_URL  = "https://www.vrabotuvanje.com.mk"
 LIST_URL  = f"{BASE_URL}/rabotni-mesta"
@@ -35,13 +35,11 @@ HEADERS = {
     "Referer": "https://www.google.com/",
 }
 
-# ── If you get 403, replace these two lines with:
-#     import cloudscraper
-#     session = cloudscraper.create_scraper()
+
 session = requests.Session()
 session.headers.update(HEADERS)
 
-# ── HELPERS ──────────────────────────────────────────────────────────────────
+
 
 def fetch(url):
     try:
@@ -53,7 +51,7 @@ def fetch(url):
         return None
 
 
-# ── DETAIL PAGE ──────────────────────────────────────────────────────────────
+
 
 def get_job_detail(url):
     """
@@ -70,13 +68,13 @@ def get_job_detail(url):
     if not soup:
         return None, None, None, None, None
 
-    # ── Company ───────────────────────────────────────────────────────────────
+
     company = None
-    # Primary: h6.job__employer (confirmed in dev tools)
+
     el = soup.find("h6", class_=lambda c: c and "job__employer" in c)
     if el:
         company = el.get_text(strip=True)
-    # Fallback: any element with employer-related class
+
     if not company:
         for cls in ["mp-text--h6--bold", "employer", "company"]:
             el = soup.find(class_=lambda c: c and cls in c)
@@ -86,20 +84,20 @@ def get_job_detail(url):
                     company = t
                     break
 
-    # ── Location ─────────────────────────────────────────────────────────────
+
     location = None
     full_text = soup.get_text(separator="\n")
-    # "Локација на работа: Скопје"
+
     loc_match = re.search(r"Локација на работа:\s*(.+)", full_text)
     if loc_match:
         location = loc_match.group(1).strip().split("\n")[0].strip()
-    # Fallback: shorter pattern
+
     if not location:
         loc_match = re.search(r"Локација:\s*(.+)", full_text)
         if loc_match:
             location = loc_match.group(1).strip().split("\n")[0].strip()
 
-    # ── Description ──────────────────────────────────────────────────────────
+
     description = None
     for sel in [".jd-body", "div[class*='job-desc']:not(.d-none)",
                 ".job-description", ".ad-description", ".job-body"]:
@@ -108,7 +106,7 @@ def get_job_detail(url):
             description = tag.get_text(separator="\n", strip=True)
             break
 
-    # ── Category ─────────────────────────────────────────────────────────────
+
     category = None
     for item in soup.find_all(["dt", "li", "span", "div"]):
         text = item.get_text(strip=True).lower()
@@ -118,9 +116,9 @@ def get_job_detail(url):
                 category = sib.get_text(strip=True)
             break
 
-    # ── Deadline ─────────────────────────────────────────────────────────────
+
     active_until = None
-    # "Пријава до: 13. 05. 2026." format
+
     match = re.search(
         r"(?:Пријава до[:\s]+)([\d]{1,2}[\.\s]+[\d]{2}[\.\s]+[\d]{4})",
         full_text
@@ -135,7 +133,7 @@ def get_job_detail(url):
     return company, location, description, category, active_until
 
 
-# ── LISTING PAGE ──────────────────────────────────────────────────────────────
+
 
 def get_listing_page(page=1):
     url = LIST_URL if page == 1 else f"{LIST_URL}?page={page}"
@@ -167,7 +165,6 @@ def get_listing_page(page=1):
     return jobs
 
 
-# ── MAIN ──────────────────────────────────────────────────────────────────────
 
 def run():
     total_saved  = 0
