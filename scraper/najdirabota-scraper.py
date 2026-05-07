@@ -1,191 +1,208 @@
+"""
+najdirabota-scraper.py
+Scrapes job listings from najdirabota.com.mk and sends them to the Spring Boot API.
+
+Site structure:
+  Homepage    : https://www.najdirabota.com.mk/          (featured jobs)
+  Search page : https://www.najdirabota.com.mk/vacancy/search?page=1
+  Detail page : https://www.najdirabota.com.mk/vacancy/view/id={encrypted_id}
+"""
+
+import time
+import re
 import requests
 from bs4 import BeautifulSoup
-import time
-from urllib.parse import urljoin
 
-BASE_URL = "https://www.najdirabota.com.mk/vacancy/search"
-DOMAIN = "https://www.najdirabota.com.mk"
 
-API_URL = "http://localhost:8080/api/jobs"
+
+BASE_URL   = "https://www.najdirabota.com.mk"
+HOME_URL   = f"{BASE_URL}/"
+SEARCH_URL = f"{BASE_URL}/vacancy/search"
+API_URL    = "http://localhost:8080/api/jobs"
+DELAY      = 1.2
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0",
-    "Content-Type": "application/json"
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "mk,en-US;q=0.9,en;q=0.8",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "Referer": "https://www.google.com/",
 }
 
 
-
-REGION_MAP = {
-    "Скопски": "Скопје",
-    "Охридски": "Охрид",
-    "Струшки": "Струга",
-    "Битолски": "Битола",
-    "Прилепски": "Прилеп",
-    "Кумановски": "Куманово",
-    "Тетовски": "Тетово",
-    "Штипски": "Штип"
-}
-
-
-def normalize_location(location):
-    if not location:
-        return location
-
-    for key in REGION_MAP:
-        if key in location:
-            return REGION_MAP[key]
-
-    return location
-
-
+SKIP_TITLES = {"кон огласот", "kon oglasite", "огласи", "пребарај", "аплицирај"}
 
 session = requests.Session()
 session.headers.update(HEADERS)
 
 
-def get_job_details(url):
+
+def fetch(url):
     try:
-        res = session.get(url, timeout=10)
-
-        if res.status_code != 200:
-            return None, None
-
-        soup = BeautifulSoup(res.text, "html.parser")
-
-        container = soup.select_one(".vacanciesSection")
-        description_blocks = container.select(".description-row") if container else []
-
-        description = "\n\n".join(
-            block.get_text(separator=" ", strip=True)
-            for block in description_blocks
-        )
-
-
-        if description and len(description) > 3000:
-            description = description[:3000]
-
-        active_until = None
-        for p in soup.select("p.fw-bold"):
-            text = p.get_text(strip=True)
-            if "Краен рок за пријавување:" in text:
-                active_until = text.replace("Краен рок за пријавување:", "").strip()
-
-        return description, active_until
-
+        r = session.get(url, timeout=15)
+        r.raise_for_status()
+        return BeautifulSoup(r.text, "html.parser")
     except Exception as e:
-        print("⚠️ Error fetching details:", url, e)
-        return None, None
+        print(f"  [WARN] Failed to fetch {url}: {e}")
+        return None
 
 
-def send_to_api(job_data):
-    try:
-        res = session.post(API_URL, json=job_data, timeout=10)
-
-        if res.status_code in (200, 201):
-            print(f" Saved: {job_data['title']}")
-        elif res.status_code == 409:
-            print(f" Duplicate skipped: {job_data['title']}")
-        else:
-            print(f" Failed {res.status_code}: {job_data['title']}")
-            print(res.text)
-
-    except Exception as e:
-        print(" API Error:", e)
+def is_valid_title(title):
+    if not title:
+        return False
+    if title.lower().strip() in SKIP_TITLES:
+        return False
+    if len(title.strip()) < 3:
+        return False
+    return True
 
 
-def scrape_page(page):
-    url = f"{BASE_URL}?page={page}"
-    print(f"\n🔎 Scraping page {page}...")
+def extract_job_links(soup):
+    """Extract unique job detail URLs from a page, skipping UI button links."""
+    links = {}  # url -> title
+    for a in soup.find_all("a", href=re.compile(r"/vacancy/view/id=")):
+        href = a.get("href", "")
+        title = a.get_text(strip=True)
 
-    try:
-        res = session.get(url, timeout=10)
+        if not is_valid_title(title):
+            continue
 
-        if res.status_code != 200:
-            return []
-
-        soup = BeautifulSoup(res.text, "html.parser")
-        job_cards = soup.select(".vacancy_box.lift.rounded.text-center.shadow-1.my-2")
-
-        jobs = []
-
-        for job in job_cards:
-            link = job.select_one("a")
-            title_tag = job.select_one(".vacancy-title")
-
-            if not link or not title_tag:
-                continue
-
-            job_url = urljoin(DOMAIN, link["href"])
-            title = title_tag.get_text(strip=True)
-
-            company = None
-            location = None
-            category = None
-
-            for p in job.select("p"):
-                text = p.get_text()
-
-                if "Фирма" in text:
-                    span = p.select_one("span")
-                    company = span.get_text(strip=True) if span else None
-
-                elif "Регион" in text:
-                    span = p.select_one("span")
-                    location = span.get_text(strip=True) if span else None
-
-                elif "Индустрија" in text:
-                    span = p.select_one("span")
-                    category = span.get_text(strip=True) if span else None
-
-            description, active_until = get_job_details(job_url)
-
-            full_title = f"{company}: {title}" if company else title
-            normalized_location = normalize_location(location)
-
-            job_data = {
-                "title": full_title,
-                "company": company,
-                "location": normalized_location,
-                "description": description,
-                "activeUntil": active_until,
-                "category": category,
-                "source": "najdirabota.com.mk",
-                "url": job_url
-            }
-
-            jobs.append(job_data)
+        url = BASE_URL + href if href.startswith("/") else href
 
 
-            send_to_api(job_data)
+        if url not in links:
+            links[url] = title
 
-            time.sleep(0.5)
-
-        return jobs
-
-    except Exception as e:
-        print("⚠️ Page error:", page, e)
-        return []
+    return links  # {url: title}
 
 
-def run_scraper(max_pages=5, global_limit=100):
-    all_jobs = []
 
-    for page in range(1, max_pages + 1):
-        jobs = scrape_page(page)
+def get_job_detail(url, title_fallback, company_fallback=None, location_fallback=None, category_fallback=None):
+    soup = fetch(url)
+    if not soup:
+        return None
 
-        if not jobs:
-            print("🛑 No more jobs.")
+    def next_text(heading_text):
+        for h4 in soup.find_all("h4"):
+            if heading_text.lower() in h4.get_text(strip=True).lower():
+                sib = h4.find_next_sibling()
+                return sib.get_text(separator="\n", strip=True) if sib else None
+        return None
+
+    title    = next_text("Позиција")     or title_fallback
+    company  = next_text("Организација") or company_fallback
+    category = next_text("Индустрија")   or category_fallback
+    location = location_fallback
+
+    desc_raw  = next_text("Опис на работната позиција") or ""
+    quals_raw = next_text("Потребни квалификации") or ""
+    description = (desc_raw + ("\n\nПотребни квалификации:\n" + quals_raw if quals_raw else "")).strip()
+
+    full_text    = soup.get_text()
+    active_until = None
+    m = re.search(r"Краен рок за пријавување:\s*(\d{2}/\d{2}/\d{4})", full_text)
+    if m:
+        active_until = m.group(1)
+
+    return {
+        "title":       title,
+        "company":     company,
+        "location":    location or None,
+        "description": description or None,
+        "activeUntil": active_until,
+        "category":    category,
+        "source":      "najdirabota.com.mk",
+        "url":         url,
+    }
+
+
+
+
+def collect_all_links():
+    """
+    Collect job links from:
+    1. Homepage (featured jobs)
+    2. /vacancy/search?page=N (paginated full listing)
+    """
+    all_links = {}  # url -> title
+
+    # Homepage
+    print("  Scanning homepage…")
+    soup = fetch(HOME_URL)
+    if soup:
+        found = extract_job_links(soup)
+        print(f"    Found {len(found)} links on homepage")
+        all_links.update(found)
+
+    # Paginated search listing
+    page = 1
+    while True:
+        url = f"{SEARCH_URL}?page={page}"
+        print(f"  Scanning search page {page}…")
+        soup = fetch(url)
+        if not soup:
             break
 
-        all_jobs.extend(jobs)
-
-        if len(all_jobs) >= global_limit:
-            print("🛑 Limit reached.")
+        found = extract_job_links(soup)
+        if not found:
+            print(f"    No jobs found on page {page}, stopping.")
             break
 
-    return all_jobs
+        new = {k: v for k, v in found.items() if k not in all_links}
+        print(f"    Found {len(found)} links ({len(new)} new)")
+        all_links.update(new)
+
+
+        has_next = soup.find("a", href=re.compile(rf"page={page+1}"))
+        if not has_next:
+            break
+
+        page += 1
+        time.sleep(DELAY)
+
+    return all_links
+
+
+
+
+def run():
+    print("Collecting job links from najdirabota.com.mk…\n")
+    all_links = collect_all_links()
+    print(f"\nTotal unique jobs found: {len(all_links)}\n")
+
+    total_sent = 0
+    total_failed = 0
+
+    for url, title in all_links.items():
+        print(f"  Scraping: {title[:60]}")
+
+        job_data = get_job_detail(url, title_fallback=title)
+        if not job_data:
+            print("    → skipped (fetch failed)")
+            total_failed += 1
+            continue
+
+        try:
+            resp = requests.post(API_URL, json=job_data, timeout=10)
+            status = resp.status_code
+            if status == 201:
+                print(f"    → saved ✓")
+                total_sent += 1
+            else:
+                print(f"    → API returned {status}: {resp.text[:100]}")
+                total_failed += 1
+        except Exception as e:
+            print(f"    → API error: {e}")
+            total_failed += 1
+
+        time.sleep(DELAY)
+
+    print(f"\n{'='*50}")
+    print(f"Done. Saved: {total_sent} | Failed: {total_failed} | Total: {len(all_links)}")
 
 
 if __name__ == "__main__":
-    jobs = run_scraper(max_pages=10, global_limit=200)
-    print(f"\n Total jobs scraped: {len(jobs)}")
+    run()
