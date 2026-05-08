@@ -19,6 +19,7 @@ public class Job {
     private String description;
 
     private String source;
+    @Column(unique = true)
     private String url;
     private String activeUntil;
     private String category;

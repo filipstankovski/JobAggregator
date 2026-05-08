@@ -15,15 +15,15 @@ def get_job_details(url):
     res = requests.get(url, headers=headers)
     soup = BeautifulSoup(res.text, "html.parser")
 
-    # TITLE
+
     title_tag = soup.select_one("h1")
     full_title = title_tag.get_text(strip=True) if title_tag else None
 
-    # DESCRIPTION (second .job-desc)
+
     desc_tag = soup.select_one("div.job-desc:not(.d-none)")
     description = desc_tag.get_text(separator="\n", strip=True) if desc_tag else None
 
-    # DETAILS
+
     active_until = None
     category = None
 
@@ -59,10 +59,9 @@ def get_jobs():
         title = title_tag.get_text(strip=True)
         company = company_tag.get_text(strip=True) if company_tag else None
 
-        # details page
         full_title, description, active_until, category = get_job_details(url)
 
-        # location (list page)
+
         location = None
         if location_tag:
             location = next(location_tag.stripped_strings, None)
@@ -72,7 +71,7 @@ def get_jobs():
             "company": company,
             "location": location,
             "description": description,
-            "activeUntil": active_until,   # 🔥 match your Spring DTO
+            "activeUntil": active_until,
             "category": category,
             "source": "kariera.mk",
             "url": url
@@ -80,15 +79,14 @@ def get_jobs():
 
         jobs.append(job_data)
 
-        # 🚀 SEND TO SPRING BOOT
+
         try:
             response = requests.post(API_URL, json=job_data)
             print("Sent:", response.status_code, url)
         except Exception as e:
             print("Error sending:", e)
 
-        time.sleep(1)  # avoid blocking
-
+        time.sleep(1)
     return jobs
 
 
