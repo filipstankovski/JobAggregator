@@ -75,6 +75,16 @@ const buildSelectOptions = (values, placeholder) => [
   ...values.map(v => <option key={v} value={v}>{v}</option>)
 ]
 
+const formatDate = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  if (isNaN(date)) return dateStr
+  const day = date.getDate().toString().padStart(2, '0')
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const year = date.getFullYear()
+  return `${day}.${month}.${year}`
+}
+
 function SunIcon() {
   return (
     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -120,7 +130,7 @@ function JobCard({ job }) {
             {job.location}
           </span>
         )}
-        {job.activeUntil && <span style={{ ...S.tag, ...S.tagDeadline }}>до {job.activeUntil}</span>}
+        {job.activeUntil && <span style={{ ...S.tag, ...S.tagDeadline }}>до {formatDate(job.activeUntil)}</span>}
         {job.category && <span style={S.tag}>{job.category}</span>}
       </div>
       <div style={S.cardFooter}>
@@ -178,10 +188,8 @@ export default function App() {
 
   const parseJobDate = (str) => {
     if (!str) return null
-    const parts = str.replace(/\./g, '/').split('/')
-    if (parts.length !== 3) return null
-    const d = new Date(`${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`)
-    return isNaN(d) ? null : d
+    const date = new Date(str)
+    return isNaN(date) ? null : date
   }
 
   const filteredJobs = useMemo(() => {

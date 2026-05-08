@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import time
 from urllib.parse import urljoin
+import datetime
 
 BASE_URL = "https://www.najdirabota.com.mk/vacancy/search"
 DOMAIN = "https://www.najdirabota.com.mk"
@@ -36,6 +37,20 @@ def normalize_location(location):
             return REGION_MAP[key]
 
     return location
+
+
+def format_active_until(active_until):
+    if not active_until:
+        return None
+
+    for date_format in ("%d. %m. %Y", "%d.%m.%Y", "%d/%m/%Y", "%m/%d/%Y"):
+        try:
+            parsed_date = datetime.datetime.strptime(active_until, date_format).date()
+            return parsed_date.strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+
+    return active_until
 
 
 # 🔁 Session for performance
@@ -142,12 +157,14 @@ def scrape_page(page):
             full_title = f"{company}: {title}" if company else title
             normalized_location = normalize_location(location)
 
+            active_until_formatted = format_active_until(active_until)
+
             job_data = {
                 "title": full_title,
                 "company": company,
                 "location": normalized_location,
                 "description": description,
-                "activeUntil": active_until,
+                "activeUntil": active_until_formatted,
                 "category": category,
                 "source": "najdirabota.com.mk",
                 "url": job_url

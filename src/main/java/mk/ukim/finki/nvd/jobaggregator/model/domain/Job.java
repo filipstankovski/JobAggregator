@@ -2,6 +2,7 @@ package mk.ukim.finki.nvd.jobaggregator.model.domain;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import java.time.LocalDate;
 
 @Entity
 @Data
@@ -21,6 +22,6 @@ public class Job {
     private String source;
     @Column(unique = true)
     private String url;
-    private String activeUntil;
+    private LocalDate activeUntil;
     private String category;
 }
