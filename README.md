@@ -127,7 +127,7 @@ pip3 install requests beautifulsoup4 cloudscraper --break-system-packages
 
 ```bash
 python3 scraper/kariera-mk-scraper.py
-python3 scraper/najdirabota-scraper.py
+python3 scraper/najdi_rabota-scraper.py
 python3 scraper/vrabotuvanje-scraper.py
 ```
 
