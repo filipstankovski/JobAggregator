@@ -29,32 +29,29 @@ JobAggregator/
 │   ├── vite.config.js              # Vite config with API proxy
 │   └── package.json
 │
-├── scraper/                        # Python scrapers
-│   ├── kariera-mk-scraper.py       # Scraper for kariera.mk
-│   ├── najdirabota-scraper.py      # Scraper for najdirabota.com.mk
-│   └── vrabotuvanje-scraper.py     # Scraper for vrabotuvanje.com.mk
-│
-├── src/
-│   └── main/
-│       ├── java/mk/ukim/finki/nvd/jobaggregator/
-│       │   ├── config/
-│       │   │   └── DataInitializer.java
-│       │   ├── model/domain/
-│       │   │   └── Job.java                # JPA entity
-│       │   ├── repository/
-│       │   │   └── JobRepository.java      # Spring Data JPA repository
-│       │   ├── service/domain/
-│       │   │   ├── JobService.java         # Service interface
-│       │   │   └── impl/
-│       │   │       └── JobServiceImpl.java # Service implementation
-│       │   ├── web/
-│       │   │   └── JobController.java      # REST API controller
-│       │   └── JobAggregatorApplication.java
-│       └── resources/
-│           └── application.properties      # DB config, JPA settings
-│
-├── docker-compose.yaml             # PostgreSQL database container
-├── pom.xml                         # Maven dependencies (Spring Boot 4.0.0)
+├── jobaggregator-backend/          # Spring Boot backend and scrapers
+│   ├── scraper/                    # Python scrapers
+│   │   ├── kariera-mk-scraper.py   # Scraper for kariera.mk
+│   │   ├── najdirabota-scraper.py  # Scraper for najdirabota.com.mk
+│   │   └── vrabotuvanje-scraper.py # Scraper for vrabotuvanje.com.mk
+│   ├── src/
+│   │   └── main/
+│   │       ├── java/mk/ukim/finki/nvd/jobaggregator/
+│   │       │   ├── model/domain/
+│   │       │   │   └── Job.java                # JPA entity
+│   │       │   ├── repository/
+│   │       │   │   └── JobRepository.java      # Spring Data JPA repository
+│   │       │   ├── service/domain/
+│   │       │   │   ├── JobService.java         # Service interface
+│   │       │   │   └── impl/
+│   │       │   │       └── JobServiceImpl.java # Service implementation
+│   │       │   ├── web/
+│   │       │   │   └── JobController.java      # REST API controller
+│   │       │   └── JobAggregatorApplication.java
+│   │       └── resources/
+│   │           └── application.properties      # DB config, JPA settings
+│   ├── docker-compose.yaml         # PostgreSQL database container
+│   └── pom.xml                     # Maven dependencies (Spring Boot 4.0.0)
 └── README.md
 ```
 
@@ -103,6 +100,7 @@ cd JobAggregator
 ### 2. Start the database
 
 ```bash
+cd jobaggregator-backend
 docker compose up -d
 ```
 
@@ -134,7 +132,7 @@ python3 scraper/vrabotuvanje-scraper.py
 ### 6. Start the frontend
 
 ```bash
-cd jobaggregator-frontend
+cd ../jobaggregator-frontend
 npm install
 npm run dev
 ```
