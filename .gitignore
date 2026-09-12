@@ -3,6 +3,7 @@ target/
 **/.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+/dist/
 
 ### STS ###
 .apt_generated
@@ -32,4 +33,6 @@ build/
 ### VS Code ###
 .vscode/
 node_modules/
+jobaggregator-frontend/dist/
+**/__pycache__/
 jobaggregator-frontend.tar.gz

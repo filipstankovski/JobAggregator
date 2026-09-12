@@ -14,6 +14,16 @@ export function GlobalStyles({ dark }) {
         background: ${dark ? '#18181F' : '#FFFFFF'};
         color: ${dark ? '#EDECE8' : '#0F0F1A'};
       }
+      @media (max-width: 980px) {
+        .job-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+      }
+      @media (max-width: 680px) {
+        .job-grid {
+          grid-template-columns: 1fr !important;
+        }
+      }
     `}</style>
   )
 }

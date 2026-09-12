@@ -24,7 +24,12 @@ REGION_MAP = {
     "Прилепски": "Прилеп",
     "Кумановски": "Куманово",
     "Тетовски": "Тетово",
-    "Штипски": "Штип"
+    "Штипски": "Штип",
+    "Велешки": "Велес",
+    "Гостиварски": "Гостивар",
+    "Кичевски": "Кичево",
+    "Струмички": "Струмица",
+    "Ресенски": "Ресен",
 }
 
 
@@ -60,7 +65,7 @@ session.headers.update(HEADERS)
 
 def get_job_details(url):
     try:
-        res = session.get(url, timeout=10)
+        res = session.get(url, timeout=120)
 
         if res.status_code != 200:
             return None, None
@@ -113,7 +118,7 @@ def scrape_page(page):
     print(f"\n🔎 Scraping page {page}...")
 
     try:
-        res = session.get(url, timeout=10)
+        res = session.get(url, timeout=120)
 
         if res.status_code != 200:
             return []

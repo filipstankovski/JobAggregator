@@ -1,0 +1,34 @@
+package mk.ukim.finki.nvd.jobaggregator.service.scheduler;
+
+import mk.ukim.finki.nvd.jobaggregator.service.domain.JobService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import java.time.LocalDate;
+
+@Component
+public class ExpiredJobCleanupScheduler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExpiredJobCleanupScheduler.class);
+
+    private final JobService jobService;
+
+    public ExpiredJobCleanupScheduler(JobService jobService) {
+        this.jobService = jobService;
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void deleteExpiredJobsOnStartup() {
+        deleteExpiredJobs();
+    }
+
+    @Scheduled(cron = "0 5 0 * * *")
+    public void deleteExpiredJobs() {
+        int deletedCount = jobService.deleteExpiredJobs(LocalDate.now());
+        LOGGER.info("Deleted {} expired job ads", deletedCount);
+    }
+}

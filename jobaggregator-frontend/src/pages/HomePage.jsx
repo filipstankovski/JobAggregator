@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react'
 import { S } from '../lib/styles'
 import { useTheme } from '../hooks/useTheme'
 import { useJobs } from '../hooks/useJobs'
 import { useJobFilters } from '../hooks/useJobFilters'
+import { fetchJobFilterOptions } from '../api/jobsApi'
 import { Header } from '../components/Header'
 import { Hero } from '../components/Hero'
 import { FilterPanel } from '../components/FilterPanel'
@@ -11,17 +13,45 @@ import { GlobalStyles } from '../components/GlobalStyles'
 
 export function HomePage() {
   const { dark, toggleTheme } = useTheme()
-  const { allJobs, loading, error } = useJobs()
-  const filters = useJobFilters(allJobs)
-  const { filteredJobs, searched } = filters
+  const filters = useJobFilters()
+  const { allJobs, loading, error, pageInfo, goToPreviousPage, goToNextPage } = useJobs(filters.appliedFilters)
+  const searched = filters.searched
+  const [filterOptions, setFilterOptions] = useState({
+    locations: [],
+    categories: [],
+    sources: [],
+  })
+
+  useEffect(() => {
+    fetchJobFilterOptions()
+      .then(options => {
+        setFilterOptions({
+          locations: options.locations || [],
+          categories: options.categories || [],
+          sources: options.sources || [],
+        })
+      })
+      .catch(() => {
+        setFilterOptions({
+          locations: [],
+          categories: [],
+          sources: [],
+        })
+      })
+  }, [])
 
   return (
     <div style={S.page}>
-      <Header dark={dark} toggleTheme={toggleTheme} jobCount={allJobs.length} loading={loading} />
+      <Header dark={dark} toggleTheme={toggleTheme} jobCount={pageInfo.totalElements} loading={loading} />
 
       <Hero dark={dark} />
 
-      <FilterPanel {...filters} />
+      <FilterPanel
+        {...filters}
+        locations={filterOptions.locations}
+        categories={filterOptions.categories}
+        sources={filterOptions.sources}
+      />
 
       <main style={S.results}>
         {loading && (
@@ -33,11 +63,16 @@ export function HomePage() {
         {!loading && !error && !searched && (
           <StateMessage icon="🔍" text={<>Одберете филтри и притиснете <strong>Пребарај</strong></>} />
         )}
-        {!loading && !error && searched && filteredJobs.length === 0 && (
+        {!loading && !error && searched && allJobs.length === 0 && (
           <StateMessage icon="😕" text="Нема огласи кои одговараат на пребарувањето." />
         )}
-        {!loading && !error && searched && filteredJobs.length > 0 && (
-          <JobGrid jobs={filteredJobs} />
+        {!loading && !error && searched && allJobs.length > 0 && (
+          <JobGrid
+            jobs={allJobs}
+            pageInfo={pageInfo}
+            onPreviousPage={goToPreviousPage}
+            onNextPage={goToNextPage}
+          />
         )}
       </main>
 

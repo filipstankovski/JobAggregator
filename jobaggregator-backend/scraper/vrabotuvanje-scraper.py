@@ -103,13 +103,11 @@ def get_job_detail(url):
 
     category = None
 
-    category_span = soup.select_one(
-        "div.card span.mp-text.mp-text__default"
-    )
+    category_link = soup.select_one("a.list__item")
 
-    if category_span:
+    if category_link:
 
-        text = category_span.get_text(strip=True)
+        text = category_link.get_text(" ", strip=True)
 
         if text and len(text) > 2:
             category = text
