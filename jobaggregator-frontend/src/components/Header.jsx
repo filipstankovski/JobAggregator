@@ -9,8 +9,8 @@ export function Header({ dark, toggleTheme, jobCount, loading }) {
 
   return (
     <header style={{ ...S.header, background: headerBg }}>
-      <div style={S.headerInner}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <div className="site-header-inner" style={S.headerInner}>
+        <div className="site-brand">
           <img
             src={dark ? '/logo-dark.png' : '/logo-light.png'}
             alt="RabotekaMK"

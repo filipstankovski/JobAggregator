@@ -25,9 +25,9 @@ export function FilterPanel({
   return (
     <section style={S.filterPanel}>
       <div style={S.filterCard}>
-        <div style={S.filterGrid}>
+        <div className="filter-grid" style={S.filterGrid}>
 
-          <div style={S.filterGroupWide}>
+          <div className="filter-group-wide" style={S.filterGroupWide}>
             <label style={S.label}>Пребарај по наслов или компанија</label>
             <input
               style={S.input}
@@ -58,9 +58,9 @@ export function FilterPanel({
             />
           </div>
 
-          <div style={S.filterGroupWide}>
+          <div className="filter-group-wide" style={S.filterGroupWide}>
             <label style={S.label}>Активен до — период</label>
-            <div style={S.dateRow}>
+            <div className="date-row" style={S.dateRow}>
               <input style={S.input} type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} onFocus={focusInput} onBlur={blurInput} />
               <span style={S.dateSep}>—</span>
               <input style={S.input} type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} onFocus={focusInput} onBlur={blurInput} />
@@ -69,7 +69,7 @@ export function FilterPanel({
 
         </div>
 
-        <div style={S.filterBottom}>
+        <div className="filter-bottom" style={S.filterBottom}>
           <div style={S.sourceRow}>
             <span style={S.sourceLabel}>Извор:</span>
             {['', ...sources].map(s => (
@@ -78,7 +78,7 @@ export function FilterPanel({
               </button>
             ))}
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="filter-actions">
             <button style={S.resetBtn} onClick={handleReset}>Ресетирај</button>
             <button style={S.searchBtn} onClick={handleSearch} onMouseEnter={e => e.currentTarget.style.opacity='0.88'} onMouseLeave={e => e.currentTarget.style.opacity='1'}>
               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">

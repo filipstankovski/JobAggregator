@@ -1,13 +1,27 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { fetchJobs } from '../api/jobsApi'
 
 const PAGE_SIZE = 30
 
+const pageFromSearchParams = (searchParams) => {
+  const pageParam = Number(searchParams.get('page') || '1')
+
+  if (!Number.isInteger(pageParam) || pageParam < 1) {
+    return 0
+  }
+
+  return pageParam - 1
+}
+
 export function useJobs(filters = {}) {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
   const [allJobs, setAllJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [page, setPage] = useState(0)
   const [pageInfo, setPageInfo] = useState({
     number: 0,
     size: PAGE_SIZE,
@@ -17,17 +31,9 @@ export function useJobs(filters = {}) {
     last: true,
   })
   const filtersKey = useMemo(() => JSON.stringify(filters), [filters])
-  const previousFiltersKey = useRef(filtersKey)
+  const page = pageFromSearchParams(searchParams)
 
   useEffect(() => {
-    if (previousFiltersKey.current !== filtersKey) {
-      previousFiltersKey.current = filtersKey
-      if (page !== 0) {
-        setPage(0)
-        return
-      }
-    }
-
     setLoading(true)
     setError(null)
 
@@ -48,16 +54,31 @@ export function useJobs(filters = {}) {
       .finally(() => { setLoading(false) })
   }, [page, filtersKey])
 
+  const navigateToPage = (nextPage) => {
+    const nextSearchParams = new URLSearchParams(searchParams)
+
+    if (nextPage <= 0) {
+      nextSearchParams.delete('page')
+    } else {
+      nextSearchParams.set('page', String(nextPage + 1))
+    }
+
+    navigate({
+      pathname: location.pathname,
+      search: nextSearchParams.toString(),
+    })
+  }
+
   const goToPreviousPage = () => {
-    setPage(currentPage => Math.max(currentPage - 1, 0))
+    navigateToPage(Math.max(page - 1, 0))
   }
 
   const goToNextPage = () => {
-    setPage(currentPage => (
-      pageInfo.totalPages > 0
-        ? Math.min(currentPage + 1, pageInfo.totalPages - 1)
-        : currentPage + 1
-    ))
+    const nextPage = pageInfo.totalPages > 0
+      ? Math.min(page + 1, pageInfo.totalPages - 1)
+      : page + 1
+
+    navigateToPage(nextPage)
   }
 
   return {

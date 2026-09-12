@@ -7,7 +7,7 @@ export function JobGrid({ jobs, pageInfo, onPreviousPage, onNextPage }) {
 
   return (
     <>
-      <div style={S.resultsTop}>
+      <div className="results-top" style={S.resultsTop}>
         <div style={S.resultsMeta}>
           {jobs.length} {jobs.length === 1 ? 'оглас' : 'огласи'} на оваа страна
           {pageInfo.totalElements > 0 && ` од ${pageInfo.totalElements} вкупно`}
